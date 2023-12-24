@@ -1,0 +1,13 @@
+{
+	"name": "Project Metis",
+	"version": "0.0.1",
+	"manifest_version": 3,
+	"description": "An extension to shut off distracting websites and let you focus on what's important.",
+	"background": {
+		"service_worker": "./ServiceWorker.js" 
+	},
+	"action": {
+		"default_icon": "icon.png",
+		"default_popup": "index.html"
+	}
+}
