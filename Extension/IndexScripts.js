@@ -2,7 +2,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	if(request.message === "insert") {
 		if(request.payload) {
 			alert("Successful insert.");
-			console.log("successful insert");
 		}
 	} else if(request.message === "update") {
 		if(request.payload) {
@@ -22,12 +21,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 document.getElementById("BlockCurrentSiteButton").addEventListener('click', event => {
-	event.preventDefault();
+	chrome.tabs.query({active: true, currentWindow: true}).then((e) => {
+		(async () => {
+			const src = chrome.runtime.getURL("./libs/UrlHelperScripts.js");
+			const urlHelperModule = await import(src);
 
-	chrome.runtime.sendMessage({
-		message: "insert",
-		payload: [{
-			"url": "test.com"
-		}]
-	})
+			chrome.runtime.sendMessage({
+				message: "insert",
+				payload: [{
+					"url": urlHelperModule.getBaseUrl(e[0].url)
+				}]
+			})
+		})();
+	});
 });

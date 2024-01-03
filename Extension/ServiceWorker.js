@@ -1,3 +1,5 @@
+import { getBaseUrl } from "./libs/UrlHelperScripts.js";
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	if(request.message === "insert") {
 		let insert_request = insert_records(request.payload);
@@ -42,35 +44,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 chrome.tabs.onActivated.addListener(function(activeInfo) {
 	chrome.tabs.get(activeInfo.tabId, function(tab) {
-		y = tab.url;
-		console.log("Activated You are here: " + y);
+		redirectToBlockedSitePage(tab);
+		console.log("on Activated");
 	})
 })
 
 chrome.tabs.onUpdated.addListener((tabid, changeInfo, tab) => {
-	const url = changeInfo.url;
-
-	if(tab.active && changeInfo.url) {
-		console.log("Updated you are here: " + changeInfo.url);
+	if(tab.active &&
+		changeInfo.status !== undefined &&
+		changeInfo.status.toLowerCase().trim() === "complete") {
+		console.log("updated");
+		redirectToBlockedSitePage(tab);
 	}
 
 });
 
-async function getCurrentTab() {
-	let queryOptions = { active: true, currentWindow: true };
-	let [tab] = await chrome.tabs.query(queryOptions);
+function redirectToBlockedSitePage(tab) {
+	const blockedSiteUrl = chrome.runtime.getURL("BockedPage.html");
+	const baseUrl = getBaseUrl(tab.url);
 
-	return tab;
-}
-
-let blockedSites = [
-	{
-		"url": "facebook.com"
-	},
-	{
-		"url": "twitter.com"
+	if(baseUrl != null) {
+		getRecord(baseUrl).then((res) => {
+			if(res !== undefined)
+				chrome.tabs.update(tab.id, { url: blockedSiteUrl });
+		});
 	}
-];
+}
 
 let db = null;
 
@@ -142,21 +141,17 @@ function insert_records(records) {
 
 function getRecord(url) {
 	if(db) {
-		const getTransaction = db.transaction("BlockedSites", "read");
+		const getTransaction = db.transaction("BlockedSites", "readonly");
 		const objectStore = getTransaction.objectStore("BlockedSites");
 
 		return new Promise((resolve, reject) => {
-			getTransaction.oncomplete = function() {
-				console.log("ALL INSERT TRANSACTIONS COMPLETE");
-			}
-
 			getTransaction.onerror = function() {
 				console.log("PROBLEM INSERTING RECORDS");
 			}
 
 			let request = objectStore.get(url);
 
-			request.onsuccess = function() {
+			request.onsuccess = function(event) {
 				resolve(event.target.result);
 			}
 		})
