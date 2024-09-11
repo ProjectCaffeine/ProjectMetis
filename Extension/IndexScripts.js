@@ -20,16 +20,43 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	}
 });
 
+function getBaseUrl(url) {
+	// Regular expression to match the main URL
+	const urlRegex = /^(https?:\/\/[^/]+)/;
+
+	// Use the exec method of the regular expression to extract the matched part
+	const matches = urlRegex.exec(url);
+
+	return matches ? matches[1] : null;
+}
+
 document.getElementById("BlockCurrentSiteButton").addEventListener('click', event => {
 	chrome.tabs.query({active: true, currentWindow: true}).then((e) => {
 		(async () => {
-			const src = chrome.runtime.getURL("./libs/UrlHelperScripts.js");
-			const urlHelperModule = await import(src);
+			var url = getBaseUrl(e[0].url);
 
 			chrome.runtime.sendMessage({
 				message: "insert",
 				payload: [{
-					"url": urlHelperModule.getBaseUrl(e[0].url)
+					"url": url
+				}]
+			})
+		})();
+	});
+});
+
+document.getElementById("UnBlockSiteButton").addEventListener('click', event => {
+	chrome.tabs.query({active: true, currentWindow: true}).then((e) => {
+		(async () => {
+			var url = document.getElementById("UnBlockSiteInput").value;
+			
+
+			console.log(url);
+
+			chrome.runtime.sendMessage({
+				message: "delete",
+				payload: [{
+					"url": url
 				}]
 			})
 		})();
